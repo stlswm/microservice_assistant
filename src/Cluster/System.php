@@ -8,6 +8,11 @@ use GuzzleHttp\Exception\GuzzleException;
 use stlswm\MicroserviceAssistant\ApiIO\ErrCode;
 use stlswm\MicroserviceAssistant\ApiIO\IO;
 
+/**
+ * Class System
+ *
+ * @package stlswm\MicroserviceAssistant\Cluster
+ */
 class System
 {
     /**
