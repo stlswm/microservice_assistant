@@ -64,15 +64,11 @@ class System
     /**
      * 子系统内部请求
      *
-     * @param string       $systemAlias
-     * @param string       $router
-     * @param string|array $data
+     * @param string $systemAlias
+     * @param string $router
+     * @param        $data
      *
      * @return array
-     * @throws GuzzleException
-     * @Author wm
-     * @Date   2018/11/28
-     * @Time   11:04
      */
     public static function innerRequest(string $systemAlias, string $router, $data): array
     {
@@ -103,6 +99,8 @@ class System
             }
             return IO::fail(ErrCode::NetErr, "无法解析API：{$domain}{$router} 返回：" . (string)$response->getBody());
         } catch (Exception $e) {
+            return IO::fail(ErrCode::NetErr, $e->getMessage());
+        } catch (GuzzleException $e) {
             return IO::fail(ErrCode::NetErr, $e->getMessage());
         }
     }
