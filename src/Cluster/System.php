@@ -58,13 +58,13 @@ class System
         if (isset(self::$system[$alias])) {
             return self::$system[$alias];
         }
-        return "";
+        return $alias;
     }
 
     /**
      * 子系统内部请求
      *
-     * @param string $systemAlias
+     * @param string $systemAlias 系统别名|完整的域名地址
      * @param string $router
      * @param        $data
      *
