@@ -20,4 +20,5 @@ class ErrCode
     const ToKenOverdue = 4001;//Access Token过期
     const NetErr = 5000;//网络错误
     const NoPower = 6000;//无权限
+    const RecordExists = 7000;//记录存在
 }
