@@ -102,12 +102,18 @@ class Category
         string $pidKey = 'pid'
     ): array {
         $parent = [];
+        if ($pid == 0) {
+            return $parent;
+        }
         foreach ($category as $item) {
             if ($item[$idKey] == $pid) {
                 $parent[] = $item;
-            }
-            if ($item[$pidKey] != 0) {
-                $parent = array_merge(self::unlimitedParent($category, $item[$pidKey], $idKey, $pidKey));
+                if ($item[$pidKey] != 0) {
+                    $parentParent = self::unlimitedParent($category, $item[$pidKey], $idKey, $pidKey);
+                    if ($parentParent) {
+                        $parent = array_merge($parent, $parentParent);
+                    }
+                }
             }
         }
         return $parent;
