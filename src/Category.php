@@ -83,4 +83,33 @@ class Category
         }
         return $dataContainer;
     }
+
+
+    /**
+     * 递归查询父辈
+     *
+     * @param array  $category
+     * @param int    $pid
+     * @param string $idKey
+     * @param string $pidKey
+     *
+     * @return array
+     */
+    public static function unlimitedParent(
+        array &$category,
+        int $pid,
+        string $idKey = 'id',
+        string $pidKey = 'pid'
+    ): array {
+        $parent = [];
+        foreach ($category as $item) {
+            if ($item[$idKey] == $pid) {
+                $parent[] = $item;
+            }
+            if ($item[$pidKey] != 0) {
+                $parent = array_merge(self::unlimitedParent($category, $item[$pidKey], $idKey, $pidKey));
+            }
+        }
+        return $parent;
+    }
 }
