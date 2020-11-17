@@ -1,9 +1,9 @@
 {
   "name": "stlswm/microservice-assistant",
-  "description": "microservice helper",
+  "description": "PHP微服务助手",
   "keywords": [
     "stlswm",
-    "microservice"
+    "微服务"
   ],
   "authors": [
     {
