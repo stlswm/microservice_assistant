@@ -3,14 +3,13 @@
 namespace stlswm\MicroserviceAssistant\Cluster;
 
 use Exception;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
+use http\Client;
+use http\Message\Body;
 use stlswm\MicroserviceAssistant\ApiIO\ErrCode;
 use stlswm\MicroserviceAssistant\ApiIO\IO;
 
 /**
  * Class System
- *
  * @package stlswm\MicroserviceAssistant\Cluster
  */
 class System
@@ -29,9 +28,7 @@ class System
 
     /**
      * 是否是集群成员服务器
-     *
-     * @param string $ip
-     *
+     * @param  string  $ip
      * @return bool
      */
     public static function isClusterMemberServer(string $ip): bool
@@ -40,8 +37,8 @@ class System
     }
 
     /**
-     * @param string $alias
-     * @param string $domain
+     * @param  string  $alias
+     * @param  string  $domain
      */
     public static function addSystem(string $alias, string $domain)
     {
@@ -49,8 +46,7 @@ class System
     }
 
     /**
-     * @param string $alias
-     *
+     * @param  string  $alias
      * @return string
      */
     public static function getSysDomain(string $alias): string
@@ -63,11 +59,9 @@ class System
 
     /**
      * 子系统内部请求
-     *
-     * @param string $systemAlias 系统别名|完整的域名地址
-     * @param string $router
+     * @param  string  $systemAlias  系统别名|完整的域名地址
+     * @param  string  $router
      * @param        $data
-     *
      * @return array
      */
     public static function innerRequest(string $systemAlias, string $router, $data): array
@@ -75,32 +69,31 @@ class System
         try {
             $domain = self::getSysDomain($systemAlias);
             if (!$domain) {
-                throw new Exception('系统错误：' . $systemAlias . '域名设置有误');
+                throw new Exception('系统错误：'.$systemAlias.'域名设置有误');
             }
             if (is_array($data)) {
                 $data = json_encode($data);
             }
-            $client = new Client([
-                'timeout' => 10,
+            //请求对象
+            $request = new Client\Request('POST', $domain.'/'.ltrim($router, '/'), [
+                "Content-Type" => 'application/json',
             ]);
-            $router = '/' . ltrim($router, '/');
-            $response = $client->request("POST", $domain . $router, [
-                "headers" => [
-                    "Content-Type" => 'application/json',
-                ],
-                'body'    => $data,
-            ]);
-            if ($response->getStatusCode() != 200) {
-                return IO::fail(ErrCode::NetErr, "网络请求错误：" . $response->getStatusCode());
+            $body = new Body();
+            $body->append($data);
+            $request->setBody($body);
+            //发送请求
+            $cli = new Client();
+            $cli->requeue($request);
+            $response = $cli->send()->getResponse($request);
+            if ($response->getResponseCode() != 200) {
+                return IO::fail(ErrCode::NetErr, "网络请求错误：".$response->getResponseCode());
             }
-            $resData = json_decode((string)$response->getBody(), TRUE);
+            $resData = json_decode($response->getBody()->toString(), true);
             if (is_array($resData)) {
                 return (array)$resData;
             }
-            return IO::fail(ErrCode::NetErr, "无法解析API：{$domain}{$router} 返回：" . (string)$response->getBody());
+            return IO::fail(ErrCode::NetErr, "无法解析API：{$domain}{$router} 返回：".(string)$response->getBody());
         } catch (Exception $e) {
-            return IO::fail(ErrCode::NetErr, $e->getMessage());
-        } catch (GuzzleException $e) {
             return IO::fail(ErrCode::NetErr, $e->getMessage());
         }
     }
