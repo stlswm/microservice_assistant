@@ -15,6 +15,16 @@ use stlswm\MicroserviceAssistant\ApiIO\IO;
 class System
 {
     /**
+     * @var array
+     */
+    private static $system = [];
+
+    /**
+     * @var string 集群验证秘钥
+     */
+    private static $clusterKey;
+
+    /**
      * @var array 集群服务器IP
      */
     public static $clusterIP = [
@@ -22,9 +32,39 @@ class System
     ];
 
     /**
-     * @var array
+     * 获取随机字符串
+     * @param  int  $len
+     * @return string
      */
-    private static $system = [];
+    private static function getRandomString(int $len): string
+    {
+        $seek = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $seek = str_shuffle($seek);
+        return substr($seek, 0, $len);
+    }
+
+    /**
+     * 生成授权秘钥
+     * @param  string  $str
+     * @return string
+     */
+    private static function generatorAuthKey(string $str): string
+    {
+        return md5(self::$clusterKey.$str);
+    }
+
+    /**
+     * 设置系统秘钥
+     * @param  string  $str
+     * @throws Exception
+     */
+    public static function setClusterKey(string $str): void
+    {
+        if (strlen($str) != 32) {
+            throw new Exception('集群秘钥必须是32位字符串');
+        }
+        self::$clusterKey = $str;
+    }
 
     /**
      * 是否是集群成员服务器
@@ -34,6 +74,25 @@ class System
     public static function isClusterMemberServer(string $ip): bool
     {
         return in_array($ip, self::$clusterIP);
+    }
+
+    /**
+     * 验证请求是否来原与内部系统
+     * @param  string  $ip
+     * @param  string  $authStr
+     * @param  string  $random
+     * @param  int  $timestamp
+     * @return bool
+     */
+    public static function isInnerReq(string $ip, string $authStr, string $random, int $timestamp): bool
+    {
+        if (!self::isClusterMemberServer($ip)) {
+            return false;
+        }
+        if (abs(time()->$timestamp) > 10) {
+            return false;
+        }
+        return $authStr == self::generatorAuthKey($random."&".$timestamp);
     }
 
     /**
@@ -63,9 +122,13 @@ class System
      * @param  string  $router
      * @param        $data
      * @return array
+     * @throws Exception
      */
     public static function innerRequest(string $systemAlias, string $router, $data): array
     {
+        if (empty(self::$clusterKey)) {
+            throw new Exception('必需设置集群秘钥');
+        }
         try {
             $domain = self::getSysDomain($systemAlias);
             if (!$domain) {
@@ -74,9 +137,14 @@ class System
             if (is_array($data)) {
                 $data = json_encode($data);
             }
+            $random = self::getRandomString(32);
+            $timestamp = time();
             //请求对象
             $request = new Client\Request('POST', $domain.'/'.ltrim($router, '/'), [
-                "Content-Type" => 'application/json',
+                "Cluster-Random"    => $random,
+                "Cluster-Timestamp" => $timestamp,
+                "Cluster-Auth"      => self::generatorAuthKey($random.'&'.$timestamp),
+                "Content-Type"      => 'application/json',
             ]);
             $body = new Body();
             $body->append($data);
