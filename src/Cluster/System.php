@@ -87,7 +87,7 @@ class System
         if (!self::isClusterMemberServer($ip)) {
             return false;
         }
-        if (abs(time()->$timestamp) > 10) {
+        if (abs(time() - $timestamp) > 10) {
             return false;
         }
         return $authStr == self::generatorAuthKey($random."&".$timestamp);
