@@ -139,10 +139,10 @@ class System
             $timestamp = time();
             //请求对象
             $headers = [
-                "Cluster-Random"    => $random,
-                "Cluster-Timestamp" => $timestamp,
-                "Cluster-Auth"      => self::generatorAuthKey($random.'&'.$timestamp),
-                "Content-Type"      => 'application/json',
+                "Cluster-Random: ".$random,
+                "Cluster-Timestamp: ".$timestamp,
+                "Cluster-Auth: ".self::generatorAuthKey($random.'&'.$timestamp),
+                "Content-Type: application/json",
             ];
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $domain.'/'.ltrim($router, '/'));
