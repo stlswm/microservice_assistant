@@ -3,8 +3,6 @@
 namespace stlswm\MicroserviceAssistant\Cluster;
 
 use Exception;
-use http\Client;
-use http\Message\Body;
 use stlswm\MicroserviceAssistant\ApiIO\ErrCode;
 use stlswm\MicroserviceAssistant\ApiIO\IO;
 
