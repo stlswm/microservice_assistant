@@ -140,27 +140,34 @@ class System
             $random = self::getRandomString(32);
             $timestamp = time();
             //请求对象
-            $request = new Client\Request('POST', $domain.'/'.ltrim($router, '/'), [
+            $headers = [
                 "Cluster-Random"    => $random,
                 "Cluster-Timestamp" => $timestamp,
                 "Cluster-Auth"      => self::generatorAuthKey($random.'&'.$timestamp),
                 "Content-Type"      => 'application/json',
-            ]);
-            $body = new Body();
-            $body->append($data);
-            $request->setBody($body);
-            //发送请求
-            $cli = new Client();
-            $cli->requeue($request);
-            $response = $cli->send()->getResponse($request);
-            if ($response->getResponseCode() != 200) {
-                return IO::fail(ErrCode::NetErr, "网络请求错误：".$response->getResponseCode());
+            ];
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $domain.'/'.ltrim($router, '/'));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_NOSIGNAL, 1);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT_MS, 8000);
+            curl_setopt($ch, CURLOPT_TIMEOUT_MS, 30000);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            $response = curl_exec($ch);
+            $resInfo = curl_getinfo($ch);
+            curl_close($ch);
+            if ($resInfo["http_code"] != 200) {
+                throw new Exception("response status code is not valid. status code: ".$resInfo["http_code"]);
             }
-            $resData = json_decode($response->getBody()->toString(), true);
+            $resData = json_decode($response, true);
             if (is_array($resData)) {
                 return (array)$resData;
             }
-            return IO::fail(ErrCode::NetErr, "无法解析API：{$domain}{$router} 返回：".(string)$response->getBody());
+            return IO::fail(ErrCode::NetErr, "无法解析API：{$domain}{$router} 返回：".$response);
         } catch (Exception $e) {
             return IO::fail(ErrCode::NetErr, $e->getMessage());
         }
