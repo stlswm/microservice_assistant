@@ -104,12 +104,17 @@ class System
 
     /**
      * @param  string  $alias
+     * @param  bool    $forceHttps
      * @return string
      */
-    public static function getSysDomain(string $alias): string
+    public static function getSysDomain(string $alias, bool $forceHttps = false): string
     {
         if (isset(self::$system[$alias])) {
-            return self::$system[$alias];
+            $host = self::$system[$alias];
+            if ($forceHttps) {
+                $host = str_replace('http://', 'https://', $host);
+            }
+            return $host;
         }
         return $alias;
     }
